@@ -33,3 +33,4 @@ export const decompressFile = (sourceFile, destinationFile) => {
     }
   });
 };
+// compressFile('./testing/file2.txt','./testing/compressed1.txt.gz')
