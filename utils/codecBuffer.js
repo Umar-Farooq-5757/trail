@@ -1,6 +1,5 @@
 import fs from "fs";
 import zlib from "zlib";
-import path from "path";
 
 export const getCompressedBuffer = (sourceFile) => {
   return new Promise((resolve, reject) => {

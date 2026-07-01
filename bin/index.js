@@ -15,7 +15,8 @@ program
 program
   .command("commit")
   .description("Commit the current source code")
-  .action(() => commitCode());
+  .argument('[commitDesc]',"Commit description or message")
+  .action((commitDesc) => commitCode(commitDesc));
 
 // parse the arguments passed by user
 program.parse();
