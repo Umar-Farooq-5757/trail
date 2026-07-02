@@ -29,7 +29,12 @@ export const initialize = async () => {
     console.error(`Error during initialization: ${err.message}`);
   }
 };
+
 export const commitCode = async (commitDesc) => {
+  if (!commitDesc) {
+    console.log("No commit message provided!");
+    return;
+  }
   try {
     const filePaths = await listFiles(process.cwd());
     const commits = readHistoryFile();
@@ -39,10 +44,9 @@ export const commitCode = async (commitDesc) => {
     for (const filePath of filePaths) {
       if (filePath === ".trail" || filePath === "node_modules") continue;
       const fullPath = path.join(process.cwd(), filePath);
-      // CHECK if it's a directory before reading it
       const stat = await fs.stat(fullPath);
       if (stat.isDirectory()) {
-        continue; // Skip folders for now (or recursively scan them later)
+        continue;
       }
       const targetDir = path.join(process.cwd(), ".trail/compressed");
 
@@ -57,10 +61,10 @@ export const commitCode = async (commitDesc) => {
         [filePath]: hashedFileName,
         ...commitObject.files,
       };
-      // if(!listOfFilesInCompressed.includes(hashedFileName)){
-      const destinationFile = path.join(targetDir, hashedFileName);
-      await fs.writeFile(destinationFile, compressedBuffer);
-      // }
+      if (!listOfFilesInCompressed.includes(hashedFileName)) {
+        const destinationFile = path.join(targetDir, hashedFileName);
+        await fs.writeFile(destinationFile, compressedBuffer);
+      }
     }
     commits.push(commitObject);
     saveCommitHistory(commits);
@@ -69,4 +73,22 @@ export const commitCode = async (commitDesc) => {
   } catch (err) {
     console.error("An error occurred:", err);
   }
+};
+
+export const logCommits = (oneline) => {
+  const commits = readHistoryFile();
+  if (commits.length === 0) {
+    console.log("No commits found. Type `trail commit` to create one!");
+    return;
+  }
+  commits.forEach((c) => {
+    if (oneline) {
+      console.log(c.commitDesc);
+      console.log('')
+    } else {
+      console.log("Commit ID: ", c.commitId);
+      console.log("Commit Description: ", c.commitDesc);
+      console.log('')
+    }
+  });
 };
