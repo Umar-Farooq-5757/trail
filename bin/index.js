@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { program } from "commander";
-import { commitCode, initialize, logCommits } from "../src/commands.js";
+import { commitCode, initialize, logCommits, revertBack } from "../src/commands.js";
 
 program.name("trail").description("A version control system").version("1.0.0");
 
@@ -18,7 +18,14 @@ program
   .argument('<commitDesc>',"Commit description or message")
   .action((commitDesc) => commitCode(commitDesc));
 
-// command log commit history
+// command to revert back to a commit
+program
+  .command("revert")
+  .description("Revert back to a commit in history")
+  .argument('<commitId>',"Commit ID")
+  .action((commitId) => revertBack(commitId));
+
+// command to log commit history
 program
   .command("log")
   .description("Log the commit history")
