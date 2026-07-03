@@ -1,6 +1,6 @@
 {
   "name": "@umarfarooq57/trail",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "A version control system",
   "main": "bin/index.js",
   "bin": {
