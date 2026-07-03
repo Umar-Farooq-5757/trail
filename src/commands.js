@@ -9,6 +9,7 @@ import {
 import { hashText } from "../utils/hashing.js";
 import { listFiles } from "../utils/listFiles.js";
 import { readHistoryFile, saveCommitHistory } from "../utils/updateHistory.js";
+import chalk from "chalk";
 
 const execPromise = promisify(exec);
 
@@ -89,11 +90,12 @@ export const logCommits = (oneline) => {
   }
   commits.forEach((c) => {
     if (oneline) {
-      console.log(c.commitDesc);
+      console.log(`${chalk.yellow(c.commitId)} ${c.commitDesc}`);
       console.log("");
     } else {
-      console.log("Commit ID: ", c.commitId);
-      console.log("Commit Description: ", c.commitDesc);
+      console.log(chalk.yellow("Commit ID: "), c.commitId);
+      console.log(chalk.blue("Commit Description: "), c.commitDesc);
+      console.log("Date: ", c.date);
       console.log("");
     }
   });
