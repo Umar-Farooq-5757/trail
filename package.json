@@ -1,6 +1,6 @@
 {
   "name": "@umarfarooq57/trail",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "A version control system",
   "main": "bin/index.js",
   "bin": {
@@ -21,6 +21,7 @@
   "dependencies": {
     "chalk": "^5.6.2",
     "commander": "^15.0.0",
+    "inquirer": "^14.0.2",
     "zlib": "^1.0.5"
   }
 }

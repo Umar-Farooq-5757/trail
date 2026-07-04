@@ -10,6 +10,7 @@ import { hashText } from "../utils/hashing.js";
 import { listFiles } from "../utils/listFiles.js";
 import { readHistoryFile, saveCommitHistory } from "../utils/updateHistory.js";
 import chalk from "chalk";
+import inquirer from "inquirer";
 
 const execPromise = promisify(exec);
 
@@ -48,6 +49,8 @@ export const commitCode = async (commitDesc) => {
       files: {},
       date: new Date().toString().replace(/ \([^)]+\)$/, ""),
     };
+    const listOfFilesInCompressed =
+      (await listFiles(path.join(process.cwd(), "./.trail/compressed"))) || [];
     for (const filePath of filePaths) {
       if (filePath === ".trail" || filePath === "node_modules") continue;
       const fullPath = path.join(process.cwd(), filePath);
@@ -60,9 +63,6 @@ export const commitCode = async (commitDesc) => {
       const compressedBuffer = await getCompressedBuffer(fullPath);
       // await fs.mkdir(targetDir, { recursive: true });
       const content = await fs.readFile(fullPath, "utf8");
-      const listOfFilesInCompressed = await listFiles(
-        path.join(process.cwd(), "./.trail/compressed"),
-      );
       const hashedFileName = hashText(content);
       commitObject.files = {
         [filePath]: hashedFileName,
@@ -123,13 +123,30 @@ export const revertBack = async (commitId) => {
         path.join(process.cwd(), ".trail/compressed", value),
       );
       if (currentFilesInProject.includes(key)) {
-        const currentContent = await fs.readFile(path.join(process.cwd(),key),'utf-8')
-        const hashed = hashText(currentContent)
+        const currentContent = await fs.readFile(
+          path.join(process.cwd(), key),
+          "utf-8",
+        );
+        const hashed = hashText(currentContent);
         // update the file only if its content is changed.
         if (hashed != value) {
           await fs.writeFile(path.join(process.cwd(), key), content);
         }
       } else {
+        // if user runs trail commit and there is a file that isn't in the commit history,
+        // trail will ask user if they want to keep that file or not.
+        // const yesOrNo = await inquirer.prompt([
+        //   {
+        //     type: "confirm",
+        //     name: "confirmKeep",
+        //     message:
+        //       "There are some files in your current state of project that are not in the commit you are jumping to. Do you want to keep those files?",
+        //     default: true,
+        //   },
+        // ]);
+        // // if(yesOrNo.confirmKeep){
+        // console.log(yesOrNo.confirmKeep);
+        // // }
         await fs.writeFile(path.join(process.cwd(), key), content);
       }
     }
