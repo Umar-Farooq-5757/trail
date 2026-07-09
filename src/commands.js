@@ -1,4 +1,4 @@
-import fs from "fs/promises";
+import fs, { stat } from "fs/promises";
 import path from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
@@ -18,7 +18,26 @@ export const initialize = async () => {
   const dirName = ".trail";
   const dirPath = path.join(process.cwd(), dirName);
 
+  async function checkRepositoryInitialized() {
+    try {
+      const stats = await stat(path.join(process.cwd(), dirName));
+      return stats.isDirectory();
+    } catch (error) {
+      // If the error code is ENOENT, the folder/file does not exist
+      if (error.code === "ENOENT") {
+        return false;
+      }
+      // Re-throw other unexpected errors (like permission issues)
+      throw error;
+    }
+  }
+
   try {
+    const repositoryInitialized = await checkRepositoryInitialized();
+    if (repositoryInitialized) {
+      console.log("Trail repository already initialized");
+      return;
+    }
     await fs.mkdir(dirPath, { recursive: true });
     // console.log(`Directory created at: ${dirPath}`);
 
