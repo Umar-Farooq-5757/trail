@@ -1,4 +1,4 @@
-import { readHistoryFile } from "../../utils/updateHistory.js";
+import { readHistoryFile } from "../utils/updateHistory.js";
 import chalk from "chalk";
 
 const logCommits = (oneline) => {

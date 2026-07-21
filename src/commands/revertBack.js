@@ -1,9 +1,9 @@
 import fs from "fs/promises";
 import path from "path";
-import { getDecompressedBuffer } from "../../utils/codecBuffer.js";
-import { hashText } from "../../utils/hashing.js";
-import { listFiles } from "../../utils/listFiles.js";
-import { readHistoryFile } from "../../utils/updateHistory.js";
+import { hashText } from "../utils/hashing.js";
+import listFiles from "../utils/listFiles.js";
+import { readHistoryFile } from "../utils/updateHistory.js";
+import { getDecompressedBuffer } from "../utils/codecBuffer.js";
 
 const revertBack = async (commitId) => {
   try {

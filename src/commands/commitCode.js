@@ -1,13 +1,22 @@
 import fs from "fs/promises";
 import path from "path";
 import { existsSync } from "node:fs";
-import { listFiles } from "../../utils/listFiles.js";
-import {
-  readHistoryFile,
-  saveCommitHistory,
-} from "../../utils/updateHistory.js";
-import { getCompressedBuffer } from "../../utils/codecBuffer.js";
-import { hashText } from "../../utils/hashing.js";
+import { readHistoryFile, saveCommitHistory } from "../utils/updateHistory.js";
+import { getCompressedBuffer } from "../utils/codecBuffer.js";
+import { hashText } from "../utils/hashing.js";
+import listFiles from "../utils/listFiles.js";
+
+const flattenFiles = (nodes) => {
+  let files = [];
+  for (const node of nodes) {
+    if (node.type === "file") {
+      files.push(node);
+    } else if (node.type === "folder" && Array.isArray(node.children)) {
+      files = files.concat(flattenFiles(node.children));
+    }
+  }
+  return files;
+};
 
 const commitCode = async (commitDesc) => {
   if (!commitDesc) {
@@ -15,62 +24,65 @@ const commitCode = async (commitDesc) => {
     return;
   }
   try {
-    const filePaths = await listFiles(process.cwd());
     const commits = readHistoryFile();
     const commitObject = {
       commitId: crypto.randomUUID(),
       commitDesc,
-      files: {},
+      filesAndFolders: {},
       date: new Date().toString().replace(/ \([^)]+\)$/, ""),
     };
 
-    const listOfFilesInCompressed =
-      (await listFiles(path.join(process.cwd(), "./.trail/compressed"))) || [];
+    const targetDir = path.join(process.cwd(), ".trail/compressed");
+    await fs.mkdir(targetDir, { recursive: true });
+
+    // Read all nodes and flatten into a list of files only
+    const rawNodes = await listFiles(process.cwd());
+    const filePaths = flattenFiles(rawNodes);
+
+    // Read existing compressed files (simple readdir is safer here)
+    const existingCompressed = await fs.readdir(targetDir);
 
     let contentOfTrailIgnore = [];
-    if (existsSync(path.join(process.cwd(), ".trailignore"))) {
-      const filesToIgnore = await fs.readFile(
-        path.join(process.cwd(), ".trailignore"),
-        "utf-8",
-      );
-      const words = filesToIgnore
+    const ignoreFilePath = path.join(process.cwd(), ".trailignore");
+    if (existsSync(ignoreFilePath)) {
+      const filesToIgnore = await fs.readFile(ignoreFilePath, "utf-8");
+      contentOfTrailIgnore = filesToIgnore
         .split(/\r?\n/)
         .map((word) => word.trim())
         .filter(Boolean);
-      contentOfTrailIgnore = words;
     }
 
     for (const filePath of filePaths) {
       if (
-        filePath === ".trail" ||
-        filePath === "node_modules" ||
-        contentOfTrailIgnore.includes(filePath)
-      )
-        continue;
-      const fullPath = path.join(process.cwd(), filePath);
-      const stat = await fs.stat(fullPath);
-      if (stat.isDirectory()) {
+        filePath.name === ".trail" ||
+        filePath.name === "node_modules" ||
+        contentOfTrailIgnore.includes(filePath.name)
+      ) {
         continue;
       }
-      const targetDir = path.join(process.cwd(), ".trail/compressed");
+
+      const fullPath = path.isAbsolute(filePath.path)
+        ? filePath.path
+        : path.join(process.cwd(), filePath.path);
 
       const compressedBuffer = await getCompressedBuffer(fullPath);
-      // await fs.mkdir(targetDir, { recursive: true });
       const content = await fs.readFile(fullPath, "utf8");
       const hashedFileName = hashText(content);
-      commitObject.files = {
-        [filePath]: hashedFileName,
-        ...commitObject.files,
+
+      commitObject.filesAndFolders = {
+        [filePath.path]: hashedFileName,
+        ...commitObject.filesAndFolders,
       };
-      if (!listOfFilesInCompressed.includes(hashedFileName)) {
+
+      if (!existingCompressed.includes(hashedFileName)) {
         const destinationFile = path.join(targetDir, hashedFileName);
         await fs.writeFile(destinationFile, compressedBuffer);
       }
     }
+
     commits.push(commitObject);
     saveCommitHistory(commits);
-    // updateHistory(commitDesc, filePaths);
-    console.log("Successfully commited changes");
+    console.log("Successfully committed changes");
   } catch (err) {
     console.error("An error occurred:", err);
   }
