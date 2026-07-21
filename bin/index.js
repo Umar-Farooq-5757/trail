@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
 import { program } from "commander";
-import { commitCode, initialize, logCommits, revertBack } from "../src/commands.js";
+import initialize from "../src/commands/initialize.js";
+import commitCode from "../src/commands/commitCode.js";
+import revertBack from "../src/commands/revertBack.js";
+import logCommits from "../src/commands/logCommits.js";
 
 program.name("trail").description("A version control system").version("1.0.0");
 
