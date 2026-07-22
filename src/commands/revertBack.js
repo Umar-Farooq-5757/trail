@@ -4,6 +4,19 @@ import { hashText } from "../utils/hashing.js";
 import listFiles from "../utils/listFiles.js";
 import { readHistoryFile } from "../utils/updateHistory.js";
 import { getDecompressedBuffer } from "../utils/codecBuffer.js";
+import chalk from "chalk";
+
+const flattenFiles = (nodes) => {
+  let files = [];
+  for (const node of nodes) {
+    if (node.type === "file") {
+      files.push(node);
+    } else if (node.type === "folder" && Array.isArray(node.children)) {
+      files = files.concat(flattenFiles(node.children));
+    }
+  }
+  return files;
+};
 
 const revertBack = async (commitId) => {
   try {
@@ -13,28 +26,29 @@ const revertBack = async (commitId) => {
       console.log(`Commit with id: ${commitId} does not exist`);
       return;
     }
-    const currentFilesInProject = await listFiles(process.cwd());
-    const listOfFilesInCompressed = await listFiles(
-      path.join(process.cwd(), "./.trail/compressed"),
+    const rawNodes = await listFiles(process.cwd());
+    const currentFilesInProject = flattenFiles(rawNodes);
+    const flattenCurrentFilesInProject = currentFilesInProject.map(
+      (file) => file.path,
     );
+    // const listOfFilesInCompressed = await listFiles(
+    //   path.join(process.cwd(), "./.trail/compressed"),
+    // );
     const specificCommitObject = commits.filter(
       (c) => c.commitId == commitId,
     )[0];
-    const filesInThatCommitId = specificCommitObject.files;
+    const filesInThatCommitId = specificCommitObject.filesAndFolders;
 
     for (const [key, value] of Object.entries(filesInThatCommitId)) {
       const content = await getDecompressedBuffer(
         path.join(process.cwd(), ".trail/compressed", value),
       );
-      if (currentFilesInProject.includes(key)) {
-        const currentContent = await fs.readFile(
-          path.join(process.cwd(), key),
-          "utf-8",
-        );
+      if (flattenCurrentFilesInProject.includes(key)) {
+        const currentContent = await fs.readFile(key, "utf-8");
         const hashed = hashText(currentContent);
         // update the file only if its content is changed.
         if (hashed != value) {
-          await fs.writeFile(path.join(process.cwd(), key), content);
+          await fs.writeFile(key, content);
         }
       } else {
         // if user runs trail commit and there is a file that isn't in the commit history,
@@ -51,9 +65,10 @@ const revertBack = async (commitId) => {
         // // if(yesOrNo.confirmKeep){
         // console.log(yesOrNo.confirmKeep);
         // // }
-        await fs.writeFile(path.join(process.cwd(), key), content);
+        await fs.writeFile(key, content);
       }
     }
+    console.log(`Successfully reverted back to Commid ID: ${chalk.bold.cyan(commitId)}`)
   } catch (err) {
     console.log(`Error during reverting: ${err.message}`);
   }

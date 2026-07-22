@@ -35,11 +35,10 @@ const commitCode = async (commitDesc) => {
     const targetDir = path.join(process.cwd(), ".trail/compressed");
     await fs.mkdir(targetDir, { recursive: true });
 
-    // Read all nodes and flatten into a list of files only
     const rawNodes = await listFiles(process.cwd());
     const filePaths = flattenFiles(rawNodes);
+    // console.log(filePaths)
 
-    // Read existing compressed files (simple readdir is safer here)
     const existingCompressed = await fs.readdir(targetDir);
 
     let contentOfTrailIgnore = [];
@@ -48,7 +47,7 @@ const commitCode = async (commitDesc) => {
       const filesToIgnore = await fs.readFile(ignoreFilePath, "utf-8");
       contentOfTrailIgnore = filesToIgnore
         .split(/\r?\n/)
-        .map((word) => word.trim())
+        .map((word) => path.basename(word.trim()))
         .filter(Boolean);
     }
 
@@ -64,6 +63,7 @@ const commitCode = async (commitDesc) => {
       const fullPath = path.isAbsolute(filePath.path)
         ? filePath.path
         : path.join(process.cwd(), filePath.path);
+        // console.log(fullPath)
 
       const compressedBuffer = await getCompressedBuffer(fullPath);
       const content = await fs.readFile(fullPath, "utf8");
