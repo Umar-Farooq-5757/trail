@@ -57,38 +57,3 @@ Each commit contains:
   }
 }
 ```
-
-
-# Devlog 02
-
-Modified the structure of history.json to support nested files also. Before it, trail only saved commit data for root level files.
-
----
-
-## Before:
-```json
-{
-  "commitId": "...",
-  "commitDesc": "Added authentication",
-  "date": "...",
-  "files": {
-    "index.js": "af82bd73...",
-    "app.js": "b17de09a..."
-  }
-}
-```
-
----
-
-## After:
-```json
-{
-  "commitId": "...",
-  "commitDesc": "Added authentication",
-  "date": "...",
-  "filesAndFolders": {
-    "D:\\Projects\\my_project_1\\file1.txt": "af82bd73...",
-    "D:\\Projects\\my_project_1\\src\\app.js": "b17de09a..."
-  }
-}
-```
